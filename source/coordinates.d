@@ -21,21 +21,55 @@ struct NonInterlacedAccessor{
   this( uint imageWidth, uint imageHeight, uint pixelsize, ubyte[] filteredData  ){
     setup ( imageWidth, imageHeight, pixelsize, filteredData ); 
   }
+  ubyte getFilter( uint row){
+    return data[ ni(0,row)-1];
+  }
   void setup( uint imageWidth, uint imageHeight, uint pixelsize, ubyte[] filteredData  ){
     ni = noninterlaceCoords( imageWidth, imageHeight, pixelsize);
     data = filteredData;
   }
   ubyte opIndex(int column, int row){
-    if ( 0>column||0>row){
+    if ( 0<=column&&0<=row){
       return data[ni(column,row)];
     }
     else{
       return 0;
     }
   }
-  ubyte opIndex(int column, int row, ubyte value){
-    if ( 0>column||0>row){
-      return data[ni(column,row)];
+  ubyte opIndex(int column, int row, ubyte subpixel){
+    if ( 0<=column&&0<=row){
+      import core.exception, std.exception, std.conv;
+      try{
+	return data[ni(column,row) +subpixel];
+      }catch( Error e){
+	throw new Exception( "Error ar: "~ ni(column, row).to!string);
+      }
+    }
+    else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign( ubyte value, int column, int row){
+    if ( 0<=column&&0<=row){
+      import core.exception, std.exception, std.conv;
+      try{
+	return data[ni(column,row)] = value;
+      }catch( Error e){
+	throw new Exception( "Error ar: "~ ni(column, row).to!string);
+      }
+    }
+    else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign( ubyte value, int column, int row, ubyte subpixel){
+    if ( 0<=column&&0<=row){
+      import core.exception, std.exception, std.conv;
+      try{
+	return data[ni(column,row)+subpixel] = value;
+      }catch( Error e){
+	throw new Exception( "Error ar: "~ ni(column, row).to!string);
+      }
     }
     else{
       return 0;
@@ -51,25 +85,49 @@ struct NonInterlacedAccessor{
 
 struct InterlacedImageAccessor{
   ubyte[] data;
+  uint imageWidth;
+  uint imageHeight;
   uint delegate(uint,uint,uint) i;
   @disable this();
   this(  uint imageWidth, uint imageHeight, uint pixelsize, ubyte[] filteredData   ){
     setup( imageWidth, imageHeight, pixelsize, filteredData  );
   }
+  ubyte getFilter( uint subimage, uint row){
+    return data[i(subimage, 0, row)-1];
+  }
   void setup( uint imageWidth, uint imageHeight, uint pixelsize, ubyte[] filteredData  ){
+    import std.stdio;
     i = interlaceCoords( imageWidth, imageHeight, pixelsize);
+    this.imageHeight = imageHeight;
+    this.imageWidth = imageWidth;
     data = filteredData;
+    writeln( "datalength = ", data.length);
+    writeln( "maxcoord = ", i(7, imageWidth-1, imageHeight/2-1) );
   }
   ubyte opIndex(int subimage, int column, int row){
-    if ( 0>column||0>row){
+    if ( 0<=column||0<=row){
       return data[i(subimage,column,row)];
     }else{
       return 0;
     }
   }
-  ubyte opIndex(int subimage, int column, int row, ubyte value){
-    if ( 0>column||0>row){
-      return data[i(subimage,column,row)];
+  ubyte opIndex(int subimage, int column, int row, ubyte subpixel){
+    if ( (0<=column&&0<=row) &&( column < imageWidth && row < imageHeight)){
+      return data[i(subimage,column,row)+subpixel];
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign(ubyte value,int subimage, int column, int row){
+    if ( 0<=column||0<=row){
+      return data[i(subimage,column,row)] = value;
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign(ubyte value,int subimage, int column, int row, uint subpixel){
+    if ( 0<=column||0<=row){
+      return data[i(subimage,column,row)+subpixel] = value;
     }else{
       return 0;
     }
@@ -98,15 +156,36 @@ struct DirectImageAccessor{
     data = new ubyte[](imageWidth*imageHeight*pixelsize);
   }
   ubyte opIndex(int subimage, int column, int row){
-    if ( 0>column||0>row){
+    if ( 0<=column||0<=row){
       return data[d(subimage,column,row)];
     }else{
       return 0;
     }
   }
-  ubyte opIndex(int subimage, int column, int row, ubyte value){
-    if ( 0>column||0>row){
-      return data[d(subimage,column,row)];
+  ubyte opIndex(int subimage, int column, int row, ubyte subpixel){
+    if ( 0<=column||0<=row){
+      return data[d(subimage,column,row)+subpixel];
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign( ubyte value,int subimage, int column, int row){
+    if ( 0<=column||0<=row){
+      return data[d(subimage,column,row)] = value;
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign( ubyte value,int subimage, int column, int row,ubyte subpixel){
+    if ( 0<=column||0<=row){
+      return data[d(subimage,column,row)+subpixel] = value;
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndex(ubyte value, int subimage, int column, int row, ubyte subpixel){
+    if ( 0<=column||0<=row){
+      return data[d(subimage,column,row)+subpixel];
     }else{
       return 0;
     }
@@ -129,6 +208,62 @@ struct DirectImageAccessor{
     };
   }
 }
+
+
+struct FlatImageAccessor{
+  ubyte[] data;
+  uint delegate(uint,uint) d;
+  @disable this();
+  this(  uint imageWidth, uint imageHeight, uint pixelsize    ){
+    setup ( imageWidth, imageHeight, pixelsize  );
+  }
+  void setup( uint imageWidth, uint imageHeight, uint pixelsize  ){
+    d = directCoords( imageWidth, imageHeight, pixelsize);
+    data = new ubyte[](imageWidth*imageHeight*pixelsize);
+  }
+  ubyte opIndex( int column, int row){
+    if ( 0<=column||0<=row){
+      return data[d(column,row)];
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndex(int column, int row, ubyte subpixel){
+    if ( 0<=column||0<=row){
+      return data[d(column,row)+subpixel];
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign( ubyte value,int column, int row){
+    if ( 0<=column||0<=row){
+      return data[d(column,row)] = value;
+    }else{
+      return 0;
+    }
+  }
+  ubyte opIndexAssign( ubyte value, int column, int row,ubyte subpixel){
+    if ( 0<=column||0<=row){
+      return data[d(column,row)+subpixel] = value;
+    }else{
+      return 0;
+    }
+  }
+/+  ubyte opIndex( int subimage, int column, int row, ubyte subpixel){
+    if ( 0<=column||0<=row){
+      return data[d(subimage,column,row)+subpixel];
+    }else{
+      return 0;
+    }
+  }+/
+  auto directCoords(uint imageWidth, uint imageHeight, uint pixelsize){
+    return delegate uint  (uint column, uint row){
+      return (row*pixelsize*imageWidth)+(column*pixelsize);
+    };
+  }
+}
+
+
 
 uint subImageWidth( uint imageWidth, uint subImageNo ) {
   uint add;

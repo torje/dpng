@@ -168,7 +168,7 @@ ubyte[] unfilter(uint filtertype:0, uint interlace :1)( ubyte[] data, uint width
   foreach(subimage; 1..8){
     foreach(row ; 0..subImageHeight( height,subimage)){
       auto filterMethod = data[i(subimage,0,row)-1];
-      write( filterMethod, ""); 
+      //write( filterMethod, ""); 
       foreach(col ; 0..subImageWidth( width,subimage)){
     	uint icoords = i(subimage,col,row);
 	uint dcoords = d(subimage,col,row);
