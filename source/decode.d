@@ -2,12 +2,14 @@ import std.stdio;
 import dpng, chunk;
 ubyte[] decode1( PNGReader pngreader) {
   import std.algorithm;
+  import core.time;
+  auto timeStart = TickDuration.currSystemTick();
+  auto timeStop = TickDuration.currSystemTick();
+
   char[4] ihdrType = "IHDR";
   auto ret = find!( (Chunk chunk, char[4] t){ return chunk.type == t;})( pngreader.chunks, ihdrType);
-  if( ret.length == 0){
-    //writeln("no IHDR found");
-  }
   IHDR ihdr = IHDR(ret[0]);
+
   uint colourchannels;
   switch( ihdr.colour_type){
   case 0:
@@ -47,106 +49,44 @@ ubyte[] decode1( PNGReader pngreader) {
   pixelsize +=7;
   pixelsize /=8;
   import reduceFilter;
+
   ReduceFilter rf = ReduceFilter( pngreader.udata, pngreader.interlace_method, pixelsize, pngreader.width, pngreader.height);
   rf.build;
-  writeln( "#YOLO");
-  if ( std.conv.to!bool("true")){
-    writeln( "Using accessors");
-    writeln( rf._realdata[0..12]);
-    return rf._realdata;
-  }
-    
-  
-  
-  if ( pngreader.colour_type == 2  &&
-       pngreader.bit_depth == 8  &&
-       pngreader.compression_method == 0 && 
-       pngreader.interlace_method == 0 &&
-       pngreader.filter_method == 0 
-       ) {
-    bool unsupportedFilter = false;
-    ubyte[] ARGBdata = new ubyte[4*pngreader.width*pngreader.height];
-    foreach( i; 0.. pngreader.height ){
-      //if (  pngreader.udata[i*(pngreader.width)*3+1] != 0 ) {
-      if ( pngreader.udata[i*(pngreader.width)*3+i] == 0  ) {
-	//writeln("Done line ", i);
-	foreach ( rgb_j,argb_j; std.range.lockstep(std.range.iota(0,pngreader.width*3,3), std.range.iota(0,pngreader.width*4,4))) {
-	  //writeln("test");
-	  ARGBdata[pngreader.width*4*i+argb_j] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; // B 
-	  ARGBdata[pngreader.width*4*i+argb_j+1] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+1];//G
-	  ARGBdata[pngreader.width*4*i+argb_j+2] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+0];//R
-	  ARGBdata[pngreader.width*4*i+argb_j+3] = 0;//pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; //A
-	}
-      } else if ( pngreader.udata[i*(pngreader.width)*3+i] == 3  ) {
-	//writeln("Done line ", i);
-	if ( i == 0 ){
-	  foreach ( rgb_j,argb_j; std.range.lockstep(std.range.iota(0,pngreader.width*3,3), std.range.iota(0,pngreader.width*4,4))) {
-	    //writeln("test");
-	    ARGBdata[pngreader.width*4*i+argb_j] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; // B 
-	    ARGBdata[pngreader.width*4*i+argb_j+1] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+1];//G
-	    ARGBdata[pngreader.width*4*i+argb_j+2] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+0];//R
-	    ARGBdata[pngreader.width*4*i+argb_j+3] = 0;//pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; //A
-	  }
-	}else{
-	  foreach ( rgb_j,argb_j; std.range.lockstep(std.range.iota(0,pngreader.width*3,3), std.range.iota(0,pngreader.width*4,4))) {
-	    //writeln("test");
-	    ARGBdata[pngreader.width*4*i+argb_j] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; // B 
-	    ARGBdata[pngreader.width*4*i+argb_j+1] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+1];//G
-	    ARGBdata[pngreader.width*4*i+argb_j+2] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+0];//R
-	    ARGBdata[pngreader.width*4*i+argb_j+3] = 0;//pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; //A
-	  }
-	}
-      } else {// ( pngreader.udata[i*(pngreader.width)*3+i] != 0 ) {
-	unsupportedFilter = true; 
-	//writeln("oups error, scanline #: ", i, ". Filter type: ", pngreader.udata[i*(pngreader.width)*3+i]);
-	foreach ( rgb_j,argb_j; std.range.lockstep(std.range.iota(0,pngreader.width*3,3), std.range.iota(0,pngreader.width*4,4))) {	  
-	  ARGBdata[pngreader.width*4*i+argb_j] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; // B 
-	  ARGBdata[pngreader.width*4*i+argb_j+1] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+1];//G
-	  ARGBdata[pngreader.width*4*i+argb_j+2] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+0];//R
-	  ARGBdata[pngreader.width*4*i+argb_j+3] = 0;//pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; //A
-	  //continue;//throw new std.exception.Exception("shit");
-	}
+  auto RGB_to_RGBA = lambdaGen(ihdr.bit_depth ,colourchannels,4,255 );
+  foreach ( int row; 0..rf.height){
+      uint d_rowstart = rf.final_destination.d(0, row);
+      uint ni_rowstart = rf.source.ni(0, row);
+			
+      foreach ( int column; 0..rf.width){
+	  auto s = rf.source.data[ni_rowstart+4*column..ni_rowstart+4+4*column];
+	  auto d = rf.final_destination.data[d_rowstart+4*column..d_rowstart+4+4*column];
+	  immutable uint channels4 = 4;
+	  RGB_to_RGBA( s, d);	
       }
-    }
-    return ARGBdata;
-  }else   if ( pngreader.colour_type == 2  &&
-	       pngreader.bit_depth == 8  &&
-	       pngreader.compression_method == 0 && 
-	       pngreader.interlace_method == 1 &&
-	       pngreader.filter_method == 0 
-	       ) {
-    import subImage;
-    auto ert =  unfilter!(0,1)(pngreader.udata, pngreader.width, pngreader.height, 3);
-    //writeln(ihdr);
-    return ert;
-  }else   if ( pngreader.colour_type == 2  &&
-	       pngreader.bit_depth == 8  &&
-	       pngreader.compression_method == 0 && 
-	       pngreader.interlace_method == 0 &&
-	       pngreader.filter_method == 1 
-	       ) {	  
+  }
+  timeStop = TickDuration.currSystemTick();
+  writeln("Copystep: ", (timeStop -timeStart).to!("msecs",double));
+  timeStart = TickDuration.currSystemTick();
+  return rf._realdata;
+}
 
-    bool unsupportedFilter = false;
-    ubyte[] ARGBdata = new ubyte[4*pngreader.width*pngreader.height];
-    foreach( i; 0.. pngreader.height ){
-      unsupportedFilter = false;
-      if ( pngreader.udata[i*(pngreader.width)*3+i] != 0 ) {
-	unsupportedFilter = true; 
-	//writeln("oups error, scanline #: ", i, ". Filter type: ", pngreader.udata[i*(pngreader.width+1)*3]);
-	continue;//throw new std.exception.Exception("shit");
-      }else {
-	//writeln("Done line ", i);
-	foreach ( rgb_j,argb_j; std.range.lockstep(std.range.iota(0,pngreader.width*3,3), std.range.iota(0,pngreader.width*4,4))) {
-	  ARGBdata[pngreader.width*4*i+argb_j] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; // B 
-	  ARGBdata[pngreader.width*4*i+argb_j+1] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+1];//G
-	  ARGBdata[pngreader.width*4*i+argb_j+2] = pngreader.udata[pngreader.width*3*i+i+1+rgb_j+0];//R
-	  ARGBdata[pngreader.width*4*i+argb_j+3] = 255;//pngreader.udata[pngreader.width*3*i+i+1+rgb_j+2]; //A
-	}
-      }
+auto lambdaGen( uint sourceDepth, uint sourceChannels, uint destDepth, uint destChannels, ubyte defaultVal = 255)
+{
+    if ( ( sourceDepth    == destDepth && destDepth == 8  ) && ( sourceChannels <= destChannels    ) )	{
+	return delegate void (ref ubyte[] source, ref ubyte[] dest) {
+	    dest[sourceChannels..$] = defaultVal;
+	    foreach( i; 0..sourceChannels){
+		auto temp = source[i];
+		dest[i] = temp;
+	    }
+	  };
+    }else{
+	return delegate void(ref ubyte[] source, ref ubyte[] dest) {
+	    dest[sourceChannels..$] = defaultVal;
+	    foreach( i; 0..min(sourceChannels, destChannels)){
+		auto temp = source[i];
+		dest[i] = temp;
+	    }
+	};	
     }
-    return ARGBdata;
-  }
-  else{
-    return new ubyte[4*pngreader.width*pngreader.height];
-  }
 }

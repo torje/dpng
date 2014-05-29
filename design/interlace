@@ -1,0 +1,52 @@
+
+
+finding the coordinates in the interlaced format is okay, but finding its match in the noninterlaced way eludes me. 
+the adam7 image is 8x8: 
+* find the first occurence of a subimage on a line it occurs, take its index on the line ( 0 indexed ), this is the number you add to the column before any multipliers
+* count the occurences of a subimage in the adam7 imageline, divide 8 by this, the result is what you multiply the column + the number in the last point with, along with the pixelsize. 
+
+* find the 0-index of the first occurence of a subimage in a column, increase the rownumber from the subimage with this number before any multiplication. 
+* count the occurences of a subimage in the adam7 and divide 8 by this, this is the number you multiply the linenumber from the subimage with. 
+
+-- 1: column index 0 and occurence 1; rowindex 0 and occurence 1;
+(subimagecolumn+0) *(8/1) * pixelsize
+(subimagerow   +0) *(8/1)*imageWidth*pixelsize
+-- 2: column index 0 and occurence 1; rowindex 4 and occurence 1;
+(subimagecolumn+
+
+
+
+for subimage 1 I have to multiply the column by 8*pixelsize
+-------------------------multiply the row    by imagewidth times 8 adding zero
+column*8*pixelsize + imageWidth*8*pixelsize+ 0;
+
+for subimage 2 I have to multiply the column by 8*pixelsize adding 4
+-------------------------multiply the row    by imagewidth times 8 adding zero
+(column+4 )*8*pixelsize  + imageWidth*8*pixelsize+ 0;
+
+
+
+for subimage 3 I have to multiply the column by 4*pixelsize adding 0
+-------------------------multiply the row    by imagewidth times 8 adding 
+4*pixelsize*column + 
+8*imageWidth*(row+4) +0
+
+for subimage 4 I have to multiply the column by 4*pixelsize adding 2
+-------------------------multiply the row    by imagewidth times 4 adding 0 lines
+4*pixelsize*( column +2)+
+4*imagewidth(row+ 0)
+
+for subimage 5 I have to multiply the column by 2*pixelsize adding 0
+-------------------------multiply the row    by imagewidth times 4 adding 2 lines
+2*pixelsize*( column )+
+2*imagewidth(row+2) 
+
+for subimage 6 I have to multiply the column by 2*pixelsize adding 1
+-------------------------multiply the row    by imagewidth times 2 adding 0 lines
+2*pixelsize*( column +1)+
+2*imagewidth(row+0)
+
+for subimage 7 I have to multiply the column by pixelsize adding 0
+-------------------------multiply the row    by imagewidth times 2 adding 1 lines
+pixelsize*( column+0)+
+2*imagewidth(row+1) + 

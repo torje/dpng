@@ -5,12 +5,11 @@ struct PNGReader{
   RedBlackTree!(char[4])  allowed_chunks;
   ubyte[char[4]]          stuff;
   Chunk[]                 chunks;
- 
   static bool isType(string file: "png")(ubyte[] pngdata){
     enforce( sig == [ 0x89, 'P','N','G', '\r', '\n', 26, 10], "shit, no valid headre");
     return true;
   }
-  this( ubyte[] pngData)
+  this( alias pred = function ubyte[4] ( ubyte[3] a ){ return [0,a[2],a[1],a[0]];} )( ubyte[] pngData)
   {
     allowed_chunks = new RedBlackTree!(char[4]);
     this.pngData = new EndianRange( pngData);

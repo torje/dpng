@@ -105,7 +105,7 @@ struct InterlacedImageAccessor{
     writeln( "maxcoord = ", i(7, imageWidth-1, imageHeight/2-1) );
   }
   ubyte opIndex(int subimage, int column, int row){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[i(subimage,column,row)];
     }else{
       return 0;
@@ -119,14 +119,14 @@ struct InterlacedImageAccessor{
     }
   }
   ubyte opIndexAssign(ubyte value,int subimage, int column, int row){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[i(subimage,column,row)] = value;
     }else{
       return 0;
     }
   }
   ubyte opIndexAssign(ubyte value,int subimage, int column, int row, uint subpixel){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[i(subimage,column,row)+subpixel] = value;
     }else{
       return 0;
@@ -156,35 +156,35 @@ struct DirectImageAccessor{
     data = new ubyte[](imageWidth*imageHeight*pixelsize);
   }
   ubyte opIndex(int subimage, int column, int row){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(subimage,column,row)];
     }else{
       return 0;
     }
   }
   ubyte opIndex(int subimage, int column, int row, ubyte subpixel){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(subimage,column,row)+subpixel];
     }else{
       return 0;
     }
   }
   ubyte opIndexAssign( ubyte value,int subimage, int column, int row){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(subimage,column,row)] = value;
     }else{
       return 0;
     }
   }
   ubyte opIndexAssign( ubyte value,int subimage, int column, int row,ubyte subpixel){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(subimage,column,row)+subpixel] = value;
     }else{
       return 0;
     }
   }
   ubyte opIndex(ubyte value, int subimage, int column, int row, ubyte subpixel){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(subimage,column,row)+subpixel];
     }else{
       return 0;
@@ -209,7 +209,6 @@ struct DirectImageAccessor{
   }
 }
 
-
 struct FlatImageAccessor{
   ubyte[] data;
   uint delegate(uint,uint) d;
@@ -222,40 +221,33 @@ struct FlatImageAccessor{
     data = new ubyte[](imageWidth*imageHeight*pixelsize);
   }
   ubyte opIndex( int column, int row){
-    if ( 0<=column||0<=row){
-      return data[d(column,row)];
+    if ( 0<=column&&0<=row){
+      return data[d( column, row)];
     }else{
       return 0;
     }
   }
   ubyte opIndex(int column, int row, ubyte subpixel){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(column,row)+subpixel];
     }else{
       return 0;
     }
   }
   ubyte opIndexAssign( ubyte value,int column, int row){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(column,row)] = value;
     }else{
       return 0;
     }
   }
   ubyte opIndexAssign( ubyte value, int column, int row,ubyte subpixel){
-    if ( 0<=column||0<=row){
+    if ( 0<=column&&0<=row){
       return data[d(column,row)+subpixel] = value;
     }else{
       return 0;
     }
   }
-/+  ubyte opIndex( int subimage, int column, int row, ubyte subpixel){
-    if ( 0<=column||0<=row){
-      return data[d(subimage,column,row)+subpixel];
-    }else{
-      return 0;
-    }
-  }+/
   auto directCoords(uint imageWidth, uint imageHeight, uint pixelsize){
     return delegate uint  (uint column, uint row){
       return (row*pixelsize*imageWidth)+(column*pixelsize);

@@ -7,5 +7,6 @@
 		"Your Name"
 	],
 	"dependencies": {
+	    "datagram": {"version": "~master", "path": "../datagram/"},
 	}
 }

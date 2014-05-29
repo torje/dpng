@@ -5,7 +5,7 @@ uint abs( int number ){
     return number;
   }
 }
-uint PaethPredictor( ubyte x, ubyte a, ubyte b, ubyte c){
+uint PaethPredictor( ubyte a, ubyte b, ubyte c){
   uint p = a + b - c;
   int pa = abs(p - a);
   int pb = abs(p - b);
@@ -21,10 +21,10 @@ uint PaethPredictor( ubyte x, ubyte a, ubyte b, ubyte c){
   return Pr;
 }
 ubyte ReconPaeth(ubyte x, ubyte a, ubyte b, ubyte c ){
-  return cast(ubyte)(x + cast(ubyte)PaethPredictor( x, a, b, c));
+  return cast(ubyte)((x + PaethPredictor( a, b, c))%256);
 }
 ubyte FilterPaeth(ubyte x, ubyte a, ubyte b, ubyte c ){
-  return cast(ubyte)(x - cast(ubyte)PaethPredictor( x, a, b, c));
+  return cast(ubyte)((x - PaethPredictor( a, b, c))%256 );
 }
 ubyte ReconNone(ubyte x, ubyte a, ubyte b, ubyte c ){
   return x;
